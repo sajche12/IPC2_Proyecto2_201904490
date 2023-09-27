@@ -1,6 +1,6 @@
 from lista_enlazada import LinkedList
 
-class ListaMensajes:
+class ListaDronesNombres:
     
     def __init__(self):
-        self.mensajes = LinkedList()
+        self.drones_nombres = LinkedList()

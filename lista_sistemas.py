@@ -1,6 +1,6 @@
-from lista_enlazada import ListaEnlazada
+from lista_enlazada import LinkedList
 
 class ListaSistemas:
     
-    def __init__(self) -> None:
-        self.sistemas = ListaEnlazada()
+    def __init__(self):
+        self.sistemas = LinkedList()

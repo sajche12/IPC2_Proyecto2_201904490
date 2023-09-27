@@ -49,7 +49,7 @@
 	</listaSistemasDrones>
 	<listaMensajes>
 		<Mensaje nombre="PRUEBA_1">
-			<sistemaDrones>NOSE QUE PONER</sistemaDrones>
+			<sistemaDrones>IPC2</sistemaDrones>
 			<instrucciones>
 				<instruccion dron="DronX">2</instruccion>
 				<instruccion dron="DronY">3</instruccion>

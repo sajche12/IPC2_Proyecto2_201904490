@@ -1,6 +1,6 @@
-from lista_enlazada import ListaEnlazada
+from lista_enlazada import LinkedList
 
 class ListaDrones:
     
-    def __init__(self) -> None:
-        self.drones = ListaEnlazada()
+    def __init__(self):
+        self.drones = LinkedList()
