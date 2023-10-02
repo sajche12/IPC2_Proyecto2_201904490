@@ -9,6 +9,7 @@ from lista_mensajes import ListaMensajes
 import xml.etree.ElementTree as ET
 from lista_dron_nombre import ListaDronesNombres
 from dron_nombre import DronNombre
+import graphviz, random
 
 lista_dron = ListaDrones()
 lista_sistemas = ListaSistemas()
@@ -41,7 +42,7 @@ def cargar_archivo():
         nombre = dron.text
         nombre_nuevo = DronNombre(nombre)
         lista_drones_nombres.drones_nombres.append(nombre_nuevo)
-        
+    
 
     # Recorre la lista de sistemas de drones
     for sistema_drones in lista_sistemas_drones.findall('sistemaDrones'):
@@ -111,7 +112,7 @@ def ver_listado_drones():
     tabla_drones.place(x=25, y=100)
     tabla_drones.column("#0", anchor="center")
 
-    #lista_drones_nombres.drones_nombres.sort()
+    #lista_drones_nombres.drones_nombres.ordenar_alfabeticamente("nombre_dron")
     for i in lista_drones_nombres.drones_nombres:
         tabla_drones.insert("", END, text=i.nombre_dron)
     
@@ -226,7 +227,43 @@ def volver_a_principal(ventana):
     root.deiconify()
     
 def ver_listado_sistemas():
-    pass
+    # Crear el grafo
+    dot = graphviz.Digraph()
+
+    altura_maxima = 0
+    j = 1
+    # Agregar los nodos al grafo
+    for sistema in lista_sistemas.sistemas:
+        dot.node(str(sistema.nombre), f"Nombre Sistema: {str(sistema.nombre)}" ,shape='box')
+        altura_maxima = int(sistema.altura_max)
+        dot.node("max", f"Altura maxima: {str(sistema.altura_max)}", shape='box', pos='0,1!')
+        dot.node("cantidad", f"Cantidad drones: {str(sistema.cantidad_drones)}", shape='box', pos='0,2!')
+        dot.node("Alturas", "Altura (mts)", shape='oval')
+        for i in range(1, int(sistema.altura_max)+1):
+            dot.node(str(i), str(i), shape='oval')
+            if i == 1:
+                dot.edge("Alturas", str(i))
+            else:
+                dot.edge(str(i-1), str(i))
+        i = 1     
+        for contenido in lista_dron.drones:
+            if i == 1:
+                dot.node(str(contenido.nombre), str(contenido.nombre), shape='oval')
+                dot.node(f"1,{str(j)}", str(contenido.valor), shape='oval')
+                dot.edge(str(contenido.nombre), f"1,{str(j)}")
+            elif i > altura_maxima:
+                i = 1
+                dot.node(str(contenido.nombre), str(contenido.nombre), shape='oval')
+                dot.node(f"1,{str(j)}", str(contenido.valor), shape='oval')
+                dot.edge(str(contenido.nombre), f"1,{str(j)}")
+            else:
+                dot.node(f"1,{str(j)}", str(contenido.valor), shape='oval')
+                dot.edge(f"1,{str(j-1)}", f"1,{str(j)}")
+            i += 1
+            j += 1
+            
+    # Renderizar el grafo
+    dot.render('sistema_drones.dot', format='png', view=True)
 #Metodo para gestion de sistema de drones
 def gestion_sistema_drones():
     gestion_sistema = Toplevel(root)
@@ -300,15 +337,19 @@ def seleccionar_mensaje():
     seleccion_mensaje = Listbox(marco, width=50, height=10)
     seleccion_mensaje.place(x=25, y=100)
     
+    sistema_utilizar = ""
     for i in lista_mensajes_nuevos.mensajes:
-        seleccion_mensaje.insert(END, i.nombre_sistema)
+        #Agregar i.nombre_mensaje a seleccion_mensaje pero si i.nombre_mensaje ya existe no agregarlo
+        if i.nombre_mensaje not in seleccion_mensaje.get(0, END):
+            seleccion_mensaje.insert(END, i.nombre_mensaje)
+        sistema_utilizar = i.nombre_sistema
     
     #Boton seleccionar mensaje
-    boton_seleccionar_mensaje = Button(marco, text="Siguiente", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: mostrar_nombre_sistema(seleccion_mensaje.get(seleccion_mensaje.curselection())))
+    boton_seleccionar_mensaje = Button(marco, text="Siguiente", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: mostrar_nombre_sistema(seleccion_mensaje.get(seleccion_mensaje.curselection()), sistema_utilizar))
     boton_seleccionar_mensaje.place(x=25, y=300)
     
     
-def mostrar_nombre_sistema(mensaje_seleccionado):
+def mostrar_nombre_sistema(mensaje_seleccionado, sistema_seleccionado):
     mostrar_nombre_sistema = Toplevel(root)
     mostrar_nombre_sistema.title("Mostrar Nombre de Sistema de Drones")
     mostrar_nombre_sistema.geometry("500x500")
@@ -337,21 +378,75 @@ def mostrar_nombre_sistema(mensaje_seleccionado):
     titulo = Label(marco, font=("Skranji", 20), bg="#17202A", fg="#fff")
     titulo.place(x=80, y=20)
 
-    sistema_utilizar = Label(marco, text="Sistema a utilizar:", font=("Skranji", 15), bg="#17202A", fg="#fff")
-    sistema_utilizar.place(x=25, y=100)
+    tiempo = 0
+    for sistema in lista_sistemas.sistemas:
+        if sistema_seleccionado == sistema.nombre:
+            sistema_utilizar = Label(marco, text=f"Sistema a utilizar: {sistema_seleccionado}", font=("Skranji", 15), bg="#17202A", fg="#fff")
+            sistema_utilizar.place(x=25, y=100)
+            tiempo = sistema.altura_max
     
     mensaje_utilizar = Label(marco, text=f"Mensaje a utilizar: {mensaje_seleccionado}", font=("Skranji", 15), bg="#17202A", fg="#fff")
     mensaje_utilizar.place(x=25, y=150)
     
-    tiempo_estimado = Label(marco, text="Tiempo estimado:", font=("Skranji", 15), bg="#17202A", fg="#fff")
+    tiempo_estimado = Label(marco, text=f"Tiempo estimado: {tiempo} segundos", font=("Skranji", 15), bg="#17202A", fg="#fff")
     tiempo_estimado.place(x=25, y=200)
     
-    boton_siguiente = Button(marco, text="Siguiente", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: ver_listado_instrucciones())
+    boton_siguiente = Button(marco, text="Siguiente", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: ver_listado_instrucciones_graphviz(mensaje_seleccionado, sistema_seleccionado, tiempo))
     boton_siguiente.place(x=25, y=250)
+
+def ver_listado_mensajes_instrucciones():
+    mensajes_instrucciones = Toplevel(root)
+    mensajes_instrucciones.title("Listado de Mensajes con Instrucciones")
+    mensajes_instrucciones.geometry("900x500")
+    #mensajes_instrucciones.resizable(False, False)
     
-def ver_listado_instrucciones():
-    pass
-def ver_instrucciones():
+    # Obtener el tamaño de la pantalla
+    pantalla_width = root.winfo_screenwidth()
+    pantalla_height = root.winfo_screenheight()
+    
+    # Calcular la posición de la ventana para centrarla
+    x = int((pantalla_width/2) - (900/2))
+    y = int((pantalla_height/2) - (500/2))
+    
+    # Establecer la posición de la ventana
+    mensajes_instrucciones.geometry(f"+{x}+{y}")
+    mensajes_instrucciones.grab_set()
+    mensajes_instrucciones.protocol("WM_DELETE_WINDOW", lambda: mensajes_instrucciones.destroy())
+    
+    root.withdraw()
+    
+    marco = Frame(mensajes_instrucciones, width=900, height=500)
+    marco.config(bg="#17202A")
+    marco.pack(fill="both", expand="True")
+    
+    #Titulo del proyecto
+    titulo = Label(marco, text="LISTADO DE MENSAJES CON INSTRUCCIONES", font=("Skranji", 20), bg="#17202A", fg="#fff")
+    titulo.place(x=20, y=20)
+    
+    #Tabla de mensajes con instrucciones
+    tabla_mensajes = ttk.Treeview(marco, columns=("Dron", "Altura"))
+    tabla_mensajes.heading("#0", text="Dron", anchor="center")
+    tabla_mensajes.heading("#1", text="Altura", anchor="center")
+    tabla_mensajes.place(x=10, y=100)
+    tabla_mensajes.column("#0", anchor="center", width=150)
+    tabla_mensajes.column("#1", anchor="center", width=150)
+    
+    for i in lista_mensajes_nuevos.mensajes:
+        if i.nombre_mensaje:
+            mensaje = Label(marco, text=f"Mensaje: {i.nombre_mensaje}", font=("Skranji", 15), bg="#17202A", fg="#fff")
+            mensaje.place(x=25, y=60)
+        tabla_mensajes.insert("", END, text=i.nombre_dron ,values=(i.altura_valor))
+        
+    #Boton volver
+    boton_volver = Button(marco, text="Volver", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: volver_a_principal(mensajes_instrucciones))
+    boton_volver.place(x=25, y=350)
+    
+def ver_listado_instrucciones_graphviz(mensaje, sistema, tiempo):
+    # Crear el grafo
+    dot = graphviz.Digraph()
+    
+    
+def ver_instrucciones_para_mensaje():
     ver_instrucciones = Toplevel(root)
     ver_instrucciones.title("Ver Instrucciones")
     ver_instrucciones.geometry("500x500")
@@ -389,7 +484,7 @@ def ver_instrucciones():
     boton_mostrar_nombre_sistema.place(x=25, y=150)
     
     #Boton ver listado de instrucciones
-    boton_ver_listado_instrucciones = Button(marco, text="Ver Listado de Instrucciones (Grafica)", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: ver_listado_instrucciones())
+    boton_ver_listado_instrucciones = Button(marco, text="Ver Listado de Instrucciones (Grafica)", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: ver_listado_instrucciones_graphviz())
     boton_ver_listado_instrucciones.place(x=25, y=200)
     
     #Boton volver
@@ -427,11 +522,11 @@ def gestion_mensajes():
     titulo.place(x=80, y=20)
     
     #Boton ver listado de mensajes
-    boton_ver_listado_mensajes = Button(marco, text="Ver Listado de Mensajes e instrucciones", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: ver_listado_mensajes())
+    boton_ver_listado_mensajes = Button(marco, text="Ver Listado de Mensajes y sus instrucciones", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: ver_listado_mensajes_instrucciones())
     boton_ver_listado_mensajes.place(x=25, y=100)
     
     #Boton ver instrucciones para ver mensaje
-    boton_ver_instrucciones = Button(marco, text="Ver Instrucciones para ver Mensaje", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: ver_instrucciones())
+    boton_ver_instrucciones = Button(marco, text="Ver Instrucciones para ver Mensaje", font=("Skranji", 15), bg="#17202A", fg="#fff", command=lambda: ver_instrucciones_para_mensaje())
     boton_ver_instrucciones.place(x=25, y=150)
     
     #Boton volver

@@ -48,8 +48,8 @@
 		</sistemaDrones>
 	</listaSistemasDrones>
 	<listaMensajes>
-		<Mensaje nombre="PRUEBA_1">
-			<sistemaDrones>IPC2</sistemaDrones>
+		<Mensaje nombre="IPC2">
+			<sistemaDrones>DRONES_DIEGO</sistemaDrones>
 			<instrucciones>
 				<instruccion dron="DronX">2</instruccion>
 				<instruccion dron="DronY">3</instruccion>

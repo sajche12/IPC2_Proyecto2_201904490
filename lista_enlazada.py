@@ -2,6 +2,7 @@ class Node:
     def __init__(self, data):
         self.data = data
         self.next = None
+        self.nombre_dron = ""
     
 class LinkedList:
     def __init__(self):
@@ -26,19 +27,18 @@ class LinkedList:
             node = node.next
             
     #Metodo para ordenar la lista
-    def sort(self):
-        current = self.head
-        index = None
+    def ordenar_alfabeticamente(self, atributo):
         if self.head is None:
             return
-        else:
-            while current is not None:
-                index = current.next
-                while index is not None:
-                    if current.data > index.data:
-                        temp = current.data
-                        current.data = index.data
-                        index.data = temp
-                    index = index.next
-                current = current.next
+        actual = self.head
+        while actual.next is not None:
+            next = actual.next
+            while next is not None and getattr(actual, atributo) > getattr(next, atributo):
+                actual = next
+                next = next.next
+            if next is None:
+                break
+            actual.next = next.next
+            next.next = actual
+
     
