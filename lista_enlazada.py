@@ -41,4 +41,7 @@ class LinkedList:
             actual.next = next.next
             next.next = actual
 
-    
+    #Metodo para borrar todos los nodos de la lista
+    def clear(self):
+        self.head = None
+        
